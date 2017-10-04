@@ -1,0 +1,10 @@
+@startuml
+ClientHttpRequestInterceptor -> TraceRestTemplateInterceptor: intercept()
+TraceRestTemplateInterceptor -> Tracer: createSpan()
+Tracer -> Span: build()
+activate Span
+TraceRestTemplateInterceptor -> SpanInjector: inject()
+TraceRestTemplateInterceptor -> KeyInjector: addRequestTags()
+TraceRestTemplateInterceptor -> Span: logEvent(cs)
+
+@enduml
