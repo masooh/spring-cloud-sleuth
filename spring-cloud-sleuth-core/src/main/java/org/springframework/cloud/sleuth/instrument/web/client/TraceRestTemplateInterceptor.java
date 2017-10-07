@@ -28,7 +28,7 @@ import org.springframework.http.client.ClientHttpResponse;
 import java.io.IOException;
 
 /**
- * Interceptor that verifies whether the trance and span id has been set on the request
+ * Interceptor that verifies whether the trace and span id has been set on the request
  * and sets them if one or both of them are missing.
  *
  * @author Marcin Grzejszczak

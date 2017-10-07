@@ -1,10 +1,35 @@
 @startuml
+title RestTemplate instrumentation
+actor anything
+participant ClientHttpRequestInterceptor
+participant TraceHttpResponse #orange
+participant TraceRestTemplateInterceptor #orange
+participant Tracer #lime
+participant Span #lime
+participant HttpSpanInjector #aqua
+participant HttpTraceKeysInjector #aqua
+
 ClientHttpRequestInterceptor -> TraceRestTemplateInterceptor: intercept()
 TraceRestTemplateInterceptor -> Tracer: createSpan()
 Tracer -> Span: build()
 activate Span
-TraceRestTemplateInterceptor -> SpanInjector: inject()
-TraceRestTemplateInterceptor -> KeyInjector: addRequestTags()
+TraceRestTemplateInterceptor -> HttpSpanInjector: inject()
+TraceRestTemplateInterceptor -> HttpTraceKeysInjector: addRequestTags()
 TraceRestTemplateInterceptor -> Span: logEvent(cs)
+TraceRestTemplateInterceptor -> ClientHttpRequestInterceptor: TraceHttpResponse
+ClientHttpRequestInterceptor -> anything: TraceHttpResponse
+anything -> TraceHttpResponse: close()
+TraceHttpResponse -> TraceRestTemplateInterceptor: finish()
+TraceRestTemplateInterceptor -> Span: logEvent(cr)
+TraceRestTemplateInterceptor -> Tracer: close(currentSpan)
+Tracer -> Span: stop()
+destroy Span
 
+skinparam LegendBackgroundColor white
+skinparam LegendBorderColor white
+legend top
+<back:orange>sleuth.instrument.web.client</back>
+<back:lime>sleuth</back>
+<back:aqua>sleuth.instrument.web</back>
+endlegend
 @enduml

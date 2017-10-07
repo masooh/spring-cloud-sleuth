@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.sleuth.instrument.web.client.jersey;
+package org.springframework.cloud.sleuth.instrument.web.client.jaxrs;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -43,42 +43,40 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.Priority;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.*;
 
 import static org.springframework.cloud.sleuth.assertions.SleuthAssertions.then;
 
-public class TraceJerseyClientInterceptorTests {
+public class JaxrsTraceFilterTests {
 
 	private TestController testController = new TestController();
 
-	private MockMvc mockMvc = MockMvcBuilders.standaloneSetup(this.testController)
-			.build();
-
 	private Client client;
 
-	private RestTemplate template = new RestTemplate(
-			new MockMvcClientHttpRequestFactory(this.mockMvc));
-
 	private DefaultTracer tracer;
+
+	private RestTemplate template;
 
 	private ArrayListSpanAccumulator spanAccumulator = new ArrayListSpanAccumulator();
 
 	@Before
 	public void setup() {
-		ClientBuilder clientBuilder = ClientBuilder.newBuilder();
-		clientBuilder.register(new TraceRequestFilter());
-		client = clientBuilder.build();
-
 		this.tracer = new DefaultTracer(new AlwaysSampler(), new Random(),
 				new DefaultSpanNamer(), new NoOpSpanLogger(), this.spanAccumulator, new TraceKeys());
-		this.template.setInterceptors(Arrays.<ClientHttpRequestInterceptor>asList(
-				new TraceRestTemplateInterceptor(this.tracer, new ZipkinHttpSpanInjector(),
-						new HttpTraceKeysInjector(this.tracer, new TraceKeys()),
-						new ExceptionMessageErrorParser())));
+
+		ClientBuilder clientBuilder = ClientBuilder.newBuilder();
+		clientBuilder.register(new JaxrsTraceFilter(this.tracer, new ZipkinHttpSpanInjector(),
+				new HttpTraceKeysInjector(this.tracer, new TraceKeys())));
+		clientBuilder.register(new EchoHeadersRequestFilter());
+		this.client = clientBuilder.build();
+
 		TestSpanContextHolder.removeCurrentSpan();
 	}
 
@@ -89,7 +87,7 @@ public class TraceJerseyClientInterceptorTests {
 
 	@Test
 	public void headersAddedWhenNoTracingWasPresent() {
-		Response response = this.client.target("/").request().get();
+		Response response = this.client.target("http://foo").request().get();
 
 		then(Span.hexToId(response.getHeaderString(Span.TRACE_ID_NAME))).isNotNull();
 		then(Span.hexToId(response.getHeaderString(Span.SPAN_ID_NAME))).isNotNull();
@@ -179,6 +177,27 @@ public class TraceJerseyClientInterceptorTests {
 		return sb.toString();
 	}
 
+	/**
+	 * Filter that echoes the request headers back in the response.
+	 * Has to be last of the filter chain. Therefore a {@link Priority} must be set.
+	 */
+	@Priority(Integer.MAX_VALUE)
+	private static class EchoHeadersRequestFilter implements ClientRequestFilter {
+		@Override
+		public void filter(ClientRequestContext requestContext) throws IOException {
+			Response response = createResponseWithRequestHeaders(requestContext);
+			requestContext.abortWith(response);
+		}
+
+		private Response createResponseWithRequestHeaders(ClientRequestContext requestContext) {
+			Response.ResponseBuilder responseBuilder = Response.ok("stubbed response");
+			for (String headerName : requestContext.getHeaders().keySet()) {
+				responseBuilder.header(headerName, requestContext.getHeaderString(headerName));
+			}
+			return responseBuilder.build();
+		}
+	}
+
 	@RestController
 	public class TestController {
 
@@ -186,8 +205,8 @@ public class TraceJerseyClientInterceptorTests {
 
 		@RequestMapping("/")
 		public Map<String, String> home(@RequestHeader HttpHeaders headers) {
-			this.span = TraceJerseyClientInterceptorTests.this.tracer.getCurrentSpan();
-			Map<String, String> map = new HashMap<String, String>();
+			this.span = JaxrsTraceFilterTests.this.tracer.getCurrentSpan();
+			Map<String, String> map = new HashMap<>();
 			addHeaders(map, headers, Span.SPAN_ID_NAME, Span.TRACE_ID_NAME,
 					Span.PARENT_ID_NAME, Span.SAMPLED_NAME);
 			return map;
