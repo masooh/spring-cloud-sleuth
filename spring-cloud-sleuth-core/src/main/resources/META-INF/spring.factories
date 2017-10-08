@@ -15,6 +15,7 @@ org.springframework.cloud.sleuth.instrument.web.TraceWebAutoConfiguration,\
 org.springframework.cloud.sleuth.instrument.web.client.TraceWebClientAutoConfiguration,\
 org.springframework.cloud.sleuth.instrument.web.client.TraceWebAsyncClientAutoConfiguration,\
 org.springframework.cloud.sleuth.instrument.web.client.feign.TraceFeignClientAutoConfiguration,\
+org.springframework.cloud.sleuth.instrument.web.client.jaxrs.TraceJaxrsClientAutoConfiguration,\
 org.springframework.cloud.sleuth.instrument.zuul.TraceZuulAutoConfiguration,\
 org.springframework.cloud.sleuth.instrument.rxjava.RxJavaAutoConfiguration,\
 org.springframework.cloud.sleuth.annotation.SleuthAnnotationAutoConfiguration

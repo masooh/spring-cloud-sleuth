@@ -41,7 +41,7 @@ import org.springframework.cloud.sleuth.util.SpanNameUtil;
  *
  * @see javax.ws.rs.client.Client
  */
-public class JaxrsTraceFilter implements ClientRequestFilter, ClientResponseFilter {
+public class TraceJaxrsFilter implements ClientRequestFilter, ClientResponseFilter {
 
     protected static final Log log = LogFactory.getLog(MethodHandles.lookup().lookupClass());
 
@@ -49,7 +49,7 @@ public class JaxrsTraceFilter implements ClientRequestFilter, ClientResponseFilt
     private HttpSpanInjector spanInjector;
     private HttpTraceKeysInjector keysInjector;
 
-    public JaxrsTraceFilter(Tracer tracer, HttpSpanInjector spanInjector, HttpTraceKeysInjector keysInjector) {
+    public TraceJaxrsFilter(Tracer tracer, HttpSpanInjector spanInjector, HttpTraceKeysInjector keysInjector) {
         this.tracer = tracer;
         this.spanInjector = spanInjector;
         this.keysInjector = keysInjector;

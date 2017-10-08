@@ -39,11 +39,14 @@ import org.springframework.cloud.sleuth.util.ExceptionUtils;
 
 import static org.springframework.cloud.sleuth.assertions.SleuthAssertions.then;
 
+/**
+ * @author Martin Hofmann-Sobik
+ */
 public class JaxrsTraceFilterTests {
 
 	private DefaultTracer tracer;
 	private ArrayListSpanAccumulator spanAccumulator = new ArrayListSpanAccumulator();
-	private JaxrsTraceFilter jaxrsTraceFilter;
+	private TraceJaxrsFilter jaxrsTraceFilter;
 	private WebTarget webTarget;
 
 	@Before
@@ -52,7 +55,7 @@ public class JaxrsTraceFilterTests {
 				new DefaultSpanNamer(), new NoOpSpanLogger(), this.spanAccumulator, new TraceKeys());
 
 		this.jaxrsTraceFilter =
-				new JaxrsTraceFilter(this.tracer, new ZipkinHttpSpanInjector(),
+				new TraceJaxrsFilter(this.tracer, new ZipkinHttpSpanInjector(),
 						              new HttpTraceKeysInjector(this.tracer, new TraceKeys()));
 
 		Client client = ClientBuilder.newBuilder()
