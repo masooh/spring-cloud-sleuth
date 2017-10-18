@@ -1,0 +1,16 @@
+@startuml
+any -> Client: target()
+activate WebTarget
+Client --> WebTarget: new
+Client -> any: WebTarget
+
+any -> WebTarget: request()
+WebTarget --> JerseyInvocation.Builder: new
+activate JerseyInvocation.Builder
+WebTarget -> any: JerseyInvocation.Builder
+any -> JerseyInvocation.Builder: get()
+JerseyInvocation.Builder -> JerseyInvocation.Builder: method("GET")
+activate JerseyInvocation
+JerseyInvocation.Builder  --> JerseyInvocation: new
+JerseyInvocation.Builder -> JerseyInvocation: invoke()
+@enduml
